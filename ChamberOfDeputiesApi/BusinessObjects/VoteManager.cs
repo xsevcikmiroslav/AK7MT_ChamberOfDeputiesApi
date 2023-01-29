@@ -1,63 +1,70 @@
-﻿using ChamberOfDeputiesApi.BusinessObjects.Interface;
+﻿using ChamberOfDeputiesApi.BusinessObjects.Interfaces;
+using ChamberOfDeputiesApi.Data;
 using ChamberOfDeputiesApi.DTO;
-using System.Text;
+using ChamberOfDeputiesApi.Repositories.Interfaces;
 
 namespace ChamberOfDeputiesApi.BusinessObjects
 {
     public class VoteManager : IVoteManager
     {
-        private static IList<DTOVote> _allvotes;
+        private IVoteDataRepository _voteDataRepository;
 
-        public VoteManager()
+        public VoteManager(IVoteDataRepository voteDataRepository)
         {
-            if (_allvotes == null)
-            {
-                _allvotes = LoadAllVotes();
-            }
-        }
-
-        private IList<DTOVote> LoadAllVotes()
-        {
-            var allvotes = new List<DTOVote>();
-            
-            var inputFilelines = File.ReadAllLines(@"D:\Moje Data\Skola\UTB FAI\I Semestr\AUIUI_AK7MT Mobilni Technologie\hl-2021ps\hl2021s.unl");
-
-            foreach (var line in inputFilelines)
-            {
-                allvotes.Add(ParseFromString(line));
-            }
-
-            return allvotes;
-        }
-
-        private DTOVote ParseFromString(string input)
-        {
-            var values = input.Split('|');
-
-            return new DTOVote
-            {
-                Id = int.Parse(values[0]),
-                IdOrganu = int.Parse(values[1]),
-                CisloSchuze = int.Parse(values[2]),
-                CisloHlasovani = int.Parse(values[3]),
-                IdBodPoraduSchuze = int.Parse(values[4]),
-                DatumHlasovani = DateTime.Parse($"{values[5]} {values[6]}:00"),
-                Pro = int.Parse(values[7]),
-                Proti = int.Parse(values[8]),
-                ZdrzeliSe = int.Parse(values[9]),
-                Nehlasovali = int.Parse(values[10]),
-                Prihlaseno = int.Parse(values[11]),
-                Kvorum = int.Parse(values[12]),
-                DruhHlasovani = values[13][0],
-                Vysledek = values[14][0],
-                NazevDlouhy = values[15],
-                NazevKratky = values[16],
-            };
+            _voteDataRepository = voteDataRepository;
         }
 
         public IList<DTOVote> GetAll()
         {
-            return _allvotes;
+            var hlasovaniASchuze =
+                from hlasovani in _voteDataRepository.Hlasovani
+                join schuze in _voteDataRepository.Schuze
+                on new { hlasovani.IdOrganu, hlasovani.CisloSchuze }
+                equals
+                new { schuze.IdOrganu, schuze.CisloSchuze }
+                select new
+                {
+                    schuze.IdSchuze,
+                    hlasovani.CisloBoduSchuze,
+                    NazevHlasovani = hlasovani.NazevDlouhy,
+                    schuze.SchuzeOd,
+                    schuze.SchuzeDo,
+                    hlasovani.Pro,
+                    hlasovani.Proti,
+                    hlasovani.ZdrzeliSe,
+                    hlasovani.Nehlasovali,
+                    hlasovani.Vysledek,
+                };
+
+            return (
+                from hlasovani in hlasovaniASchuze
+                join bodSchuze in _voteDataRepository.BodSchuze
+                on new { hlasovani.IdSchuze, hlasovani.CisloBoduSchuze }
+                equals
+                new { bodSchuze.IdSchuze, bodSchuze.CisloBoduSchuze }
+                select new DTOVote
+                {
+                    IdSchuze = hlasovani.IdSchuze,
+                    CisloBoduSchuze = hlasovani.CisloBoduSchuze,
+                    NazevHlasovani = hlasovani.NazevHlasovani,
+                    NazevBoduHlasovani = bodSchuze.UplnyNazev,
+                    CisloBodu = bodSchuze.CisloBoduSchuze,
+                    SchuzeOd = hlasovani.SchuzeOd,
+                    SchuzeDo = hlasovani.SchuzeDo,
+                    Pro = hlasovani.Pro,
+                    Proti = hlasovani.Proti,
+                    ZdrzeliSe = hlasovani.ZdrzeliSe,
+                    Nehlasovali = hlasovani.Nehlasovali,
+                    Vysledek = hlasovani.Vysledek,
+                })
+                .Where(s => s.SchuzeOd > new DateTime(2022, 1, 1))
+                .OrderByDescending(s => s.SchuzeOd)
+                .ToList();
+        }
+
+        public IList<DTOVote> Find(string searchTerm)
+        {
+            return null;
         }
     }
 }

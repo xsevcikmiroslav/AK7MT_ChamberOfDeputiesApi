@@ -1,6 +1,6 @@
-﻿using ChamberOfDeputiesApi.BusinessObjects.Interface;
+﻿using Microsoft.AspNetCore.Mvc;
+using ChamberOfDeputiesApi.BusinessObjects.Interfaces;
 using ChamberOfDeputiesApi.DTO;
-using Microsoft.AspNetCore.Mvc;
 
 namespace ChamberOfDeputiesApi.Controllers
 {
@@ -19,6 +19,12 @@ namespace ChamberOfDeputiesApi.Controllers
         public IList<DTOVote> GetAll()
         {
             return _voteManager.GetAll();
+        }
+
+        [HttpGet("find/{searchTerm}")]
+        public IList<DTOVote> Find(string searchTerm)
+        {
+            return _voteManager.Find(searchTerm);
         }
     }
 }

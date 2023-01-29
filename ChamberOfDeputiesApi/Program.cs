@@ -1,9 +1,14 @@
 using ChamberOfDeputiesApi.BusinessObjects;
-using ChamberOfDeputiesApi.BusinessObjects.Interface;
+using ChamberOfDeputiesApi.BusinessObjects.Interfaces;
+using ChamberOfDeputiesApi.Repositories;
+using ChamberOfDeputiesApi.Repositories.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+builder.Services.AddScoped<IVoteDataRepository, VoteDataRepository>();
+builder.Services.AddScoped<IDeputyDataRepository, DeputyDataRepository>();
 
 builder.Services.AddScoped<IVoteManager, VoteManager>();
 
